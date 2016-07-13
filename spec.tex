@@ -1,9 +1,60 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{a4paper}
+
+\usepackage[frenchb]{babel}
+\usepackage{pst-node}
+\usepackage{pst-tree}
+
+\geometry{a4paper,twoside,left=1cm,right=1cm,top=2cm,bottom=2cm}
+
+\newcommand{\regt}{\textbf{regressionTree }}
+
+\usepackage{tikz}
+
+\title{\textbf{regressionTree} : un arbre de modèles de régression}
+\author{Yves Tourbier}
+\date{Version du 13 Juillet 2016}
+
+\begin{document}
+\maketitle
+\tableofcontents
 
 
 
-Fonctionnalités souhaitées :
+\section{Introduction, objectifs}
+
+Le but du module \regt est de créer un modèle de régression sur un tableau de données de façon automatique et en évitant les pièges classiques de la régression. Les données sont séparées en variables d'entrées (facteurs, variables) et de sortie (réponses). Quand les données contiennent plusieurs réponses, on peut faire des modèles indépendants ou au contraire tenir compte des relations entre les réponses. On parle alors d'arbre de modèles, un réponse sert à en modéliser une autre.\newline
+
+Le module \regt est une librairie de fonctions GO, pour créer un modèle de régression il faut écrire un programme.\newline
+
+Dans sa première version, \regt crée un modèle de régression linéaire classique pour chaque réponse, en utilisant une méthode de régression robuste (par programmation linéaire). \regt cherche un modèle linéaire purement paramétrique et n'emploie pas les techniques à la mode comme le krigeage, SVM... Le but de \regt est de construire le modèle de régression linéaire le plus simple possible. \regt se veut complémentaire des méthodes non paramétriques.\newline
+
+\regt crée aussi par défaut des modèles de régression avec les techniques classiques : régression linéaire multiple sans transformation des variables (régression purement linéaire), lasso... qui servent de référence pour mesurer l'apport du \regt sur des critères de précision et taille du modèle.
+
+\section{Principes de construction d'un \regt}
+
+Pour construire un \regt à partir d'un jeu de données, il faut créer des facteurs et des transformations des réponses, imposer des contraintes au modèle, puis choisir une méthode d'exploration quand on cherche un arbre de modèles. \newline
+
+Le module \regt gère des objets créés par l'utilisateur : variable, réponse, tableau de données, ensemble, contrainte, modèle... Les opérations doivent être réalisées dans un ordre logique (un objet ne peut être utilisé qu'après sa création) :
 \begin{itemize}
-	\item Plusieurs réponses, une partie des coefficients commune aux différentes réponses
+	\item Lecture des données. Les données sont dans des fichiers texte au format ".txt" ou ".csv". On distingue les données contenant les facteurs et les réponses, le jeu de données classique, des données ne contenant que les facteurs qui sont destinées à imposer des contraintes au modèle ;
+	\item Création d'ensembles de données, par exemple pour le calcul du modèle puis pour sa validation ;
+	\item Création des variables d'entrée en transformant les variables du jeu de données. Les transformations sont des interactions ou des formules plus complexes. Chaque variable est associée à un codage (normalisation ou polynômes orthogonaux par exemple). Les variables transformées forment des ensembles nommés de variables qui seront utilisés pour la recherche de modèles, l'expression des contraintes ;
+	\item Création des réponses en transformant les réponses du jeu de données ;
+	\item Description de l'arbre de modèles en autorisant ou interdisant des relations entre les réponses (qui se propagent sur les transformations des réponses). L'arbre peut se résumer à un seul modèle quand il n'y a qu'une seule réponse ;
+	\item Description des contraintes sur les modèles ;
+	\item Choix d'un algorithme de parcours de l'arbre, exhaustif par exemple.
+\end{itemize}
+
+\section{Fonctionnalités}
+
+\begin{itemize}
+	\item Plusieurs réponses, 
+	\item Une partie des coefficients commune aux différentes réponses
 	\item Arbre de régression, transformation non linéaire d'une réponse utilisée comme variable dans le modèle d'une autre réponse
 	\item Contraintes d'intervalles sur les coefficients
 	\item Contrainte sur la somme des coefficients de chaque modèle pour sélectionner les variables
@@ -15,56 +66,56 @@ Fonctionnalités souhaitées :
 	\item Poids sur les résidus (positifs ou nuls)
 \end{itemize}
 
+\end{document}
 
 
-Arbres de régression sous contraintes
-
-La recherche des arbres optimaux est effectuée en plusieurs étapes :
-- créer les transformations possibles de réponses et variables
-- créer les contraintes, décrire l'arbre recherché
-- découper la recherche de l'arbre en un ensemble de jobs indépendants = le découpage donne des PLMIP. Par exemple si une formule non linéaire implique de rechercher une valeur par dichotomie alors on gère cette dichotomie par des jobs
-- découper les essais en ensemble d'apprentissage et de test
-- réaliser les jobs en // ou séquentiellement.
-
-Critères
-- moindres écarts
-- moindres carrés
-- erreur max
-- critère d'erreur sur un arbre = somme des erreurs 
-- critère de courbure minimale en interpolation pour gérer l'overfitting
-- on peut avoir plusieurs critères pour une même réponse
-
-Réponses
-- une réponse est un scalaire ou un signal sur lequel on prélève des critères scalaires
-- pour chaque réponse une liste de transformations
-- des relations possibles entre les réponses = des équations dans un intervalle
-- un ordre de modélisation entre les réponses = relations de cause à effet
-- réponse fictive à construire et servant de variable cachée = tronc commun entre les réponses
-
-Variables
-- variables de base : scalaire ou signal sur lequel on prélève des critères
-- transformations sur les variables de base
-- équivalences entre les transformations de variables sur certains critères ? Par ex la carré et le sinus si 3 niveaux
-- variables fictives communes à plusieurs réponses : on leur donne un nom et on les contraint avec une formule maxi sur une liste de variables de base
-
-Contraintes
-- sur estimations des essais réalisés
-- sur estimation d'essais non réalisés
-- sur les coefficients
-- sur les résidus : erreur maxi en absolu ou en % de la réponse ou d'une variable
-- sur la somme des coeffs en valeur absolue
-- sur le max des coeff
-- sur le nombre de coeff non nuls par modèle et par arbre
-- ordre sur les estimations pour un ensemble d'essais
-- ordre sur les estimations en fonction d'une clé de tri
-- monotonie dans une direction quelconque
-- sur la dérivée d'un modèle
-- sur chaque réponse : combien de transformations peut utiliser l'arbre au maximum, combine de modèles par réponse
-- ordre sur la précision des modèles entre différentes réponses
-- critère d'erreur globale minimal quand on connait la répétabilité
-- courbure minimale 
-
-Algorithme
-- procédure SEP sur les jobs.
-- le job sans contrainte ou relaché peut servir de coupe pour les autres jobs.
-- PL MIP NEOS ou CPLEX pour les jobs
+%
+%La recherche des arbres optimaux est effectuée en plusieurs étapes :
+%- créer les transformations possibles de réponses et variables
+%- créer les contraintes, décrire l'arbre recherché
+%- découper la recherche de l'arbre en un ensemble de jobs indépendants = le découpage donne des PLMIP. Par exemple si une formule non linéaire implique de rechercher une valeur par dichotomie alors on gère cette dichotomie par des jobs
+%- découper les essais en ensemble d'apprentissage et de test
+%- réaliser les jobs en // ou séquentiellement.
+%
+%Critères
+%- moindres écarts
+%- moindres carrés
+%- erreur max
+%- critère d'erreur sur un arbre = somme des erreurs 
+%- critère de courbure minimale en interpolation pour gérer l'overfitting
+%- on peut avoir plusieurs critères pour une même réponse
+%
+%Réponses
+%- une réponse est un scalaire ou un signal sur lequel on prélève des critères scalaires
+%- pour chaque réponse une liste de transformations
+%- des relations possibles entre les réponses = des équations dans un intervalle
+%- un ordre de modélisation entre les réponses = relations de cause à effet
+%- réponse fictive à construire et servant de variable cachée = tronc commun entre les réponses
+%
+%Variables
+%- variables de base : scalaire ou signal sur lequel on prélève des critères
+%- transformations sur les variables de base
+%- équivalences entre les transformations de variables sur certains critères ? Par ex la carré et le sinus si 3 niveaux
+%- variables fictives communes à plusieurs réponses : on leur donne un nom et on les contraint avec une formule maxi sur une liste de variables de base
+%
+%Contraintes
+%- sur estimations des essais réalisés
+%- sur estimation d'essais non réalisés
+%- sur les coefficients
+%- sur les résidus : erreur maxi en absolu ou en % de la réponse ou d'une variable
+%- sur la somme des coeffs en valeur absolue
+%- sur le max des coeff
+%- sur le nombre de coeff non nuls par modèle et par arbre
+%- ordre sur les estimations pour un ensemble d'essais
+%- ordre sur les estimations en fonction d'une clé de tri
+%- monotonie dans une direction quelconque
+%- sur la dérivée d'un modèle
+%- sur chaque réponse : combien de transformations peut utiliser l'arbre au maximum, combine de modèles par réponse
+%- ordre sur la précision des modèles entre différentes réponses
+%- critère d'erreur globale minimal quand on connait la répétabilité
+%- courbure minimale 
+%
+%Algorithme
+%- procédure SEP sur les jobs.
+%- le job sans contrainte ou relaché peut servir de coupe pour les autres jobs.
+%- PL MIP NEOS ou CPLEX pour les jobs

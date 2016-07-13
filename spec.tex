@@ -1,0 +1,70 @@
+
+
+
+Fonctionnalités souhaitées :
+\begin{itemize}
+	\item Plusieurs réponses, une partie des coefficients commune aux différentes réponses
+	\item Arbre de régression, transformation non linéaire d'une réponse utilisée comme variable dans le modèle d'une autre réponse
+	\item Contraintes d'intervalles sur les coefficients
+	\item Contrainte sur la somme des coefficients de chaque modèle pour sélectionner les variables
+	\item Contrainte de monotonie pour une réponse par rapport à une variable identifiée
+	\item Contrainte d'extremum d'une réponse dans un domaine identifié
+	\item Contrainte d'ordre des estimations en relation avec l'ordre des observations et une valeur de dispersion connue
+	\item Contraintes sur les estimations d'un ensemble d'observations pour lequel la réponse n'est pas connue
+	\item Accepter les valeurs manquantes sur les facteurs et les réponses
+	\item Poids sur les résidus (positifs ou nuls)
+\end{itemize}
+
+
+
+Arbres de régression sous contraintes
+
+La recherche des arbres optimaux est effectuée en plusieurs étapes :
+- créer les transformations possibles de réponses et variables
+- créer les contraintes, décrire l'arbre recherché
+- découper la recherche de l'arbre en un ensemble de jobs indépendants = le découpage donne des PLMIP. Par exemple si une formule non linéaire implique de rechercher une valeur par dichotomie alors on gère cette dichotomie par des jobs
+- découper les essais en ensemble d'apprentissage et de test
+- réaliser les jobs en // ou séquentiellement.
+
+Critères
+- moindres écarts
+- moindres carrés
+- erreur max
+- critère d'erreur sur un arbre = somme des erreurs 
+- critère de courbure minimale en interpolation pour gérer l'overfitting
+- on peut avoir plusieurs critères pour une même réponse
+
+Réponses
+- une réponse est un scalaire ou un signal sur lequel on prélève des critères scalaires
+- pour chaque réponse une liste de transformations
+- des relations possibles entre les réponses = des équations dans un intervalle
+- un ordre de modélisation entre les réponses = relations de cause à effet
+- réponse fictive à construire et servant de variable cachée = tronc commun entre les réponses
+
+Variables
+- variables de base : scalaire ou signal sur lequel on prélève des critères
+- transformations sur les variables de base
+- équivalences entre les transformations de variables sur certains critères ? Par ex la carré et le sinus si 3 niveaux
+- variables fictives communes à plusieurs réponses : on leur donne un nom et on les contraint avec une formule maxi sur une liste de variables de base
+
+Contraintes
+- sur estimations des essais réalisés
+- sur estimation d'essais non réalisés
+- sur les coefficients
+- sur les résidus : erreur maxi en absolu ou en % de la réponse ou d'une variable
+- sur la somme des coeffs en valeur absolue
+- sur le max des coeff
+- sur le nombre de coeff non nuls par modèle et par arbre
+- ordre sur les estimations pour un ensemble d'essais
+- ordre sur les estimations en fonction d'une clé de tri
+- monotonie dans une direction quelconque
+- sur la dérivée d'un modèle
+- sur chaque réponse : combien de transformations peut utiliser l'arbre au maximum, combine de modèles par réponse
+- ordre sur la précision des modèles entre différentes réponses
+- critère d'erreur globale minimal quand on connait la répétabilité
+- courbure minimale 
+
+Algorithme
+- procédure SEP sur les jobs.
+- le job sans contrainte ou relaché peut servir de coupe pour les autres jobs.
+- PL MIP NEOS ou CPLEX pour les jobs
